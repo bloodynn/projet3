@@ -1,0 +1,11 @@
+{
+  "name": "alipromo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Extension navigateur qui teste automatiquement les codes promo AliExpress",
+  "scripts": {
+    "test": "node --test tests/core.test.js",
+    "test:e2e": "node tests/e2e.js",
+    "zip": "cd extension && zip -r ../alipromo.zip . -x '.*'"
+  }
+}

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Passer commande - AliExpress (maquette)</title>
+<style>
+  body { font-family: sans-serif; margin: 30px; }
+  .item { padding: 8px; border: 1px solid #ddd; margin: 6px 0; display: flex; justify-content: space-between; }
+  .summary { margin-top: 20px; width: 340px; border: 1px solid #ccc; padding: 10px; }
+  .row { display: flex; justify-content: space-between; margin: 4px 0; }
+  .err { color: red; font-size: 12px; }
+</style></head>
+<body>
+  <h1>Passer commande</h1>
+  <div class="item"><span>Écouteurs Bluetooth</span><span>29,90 €</span><button class="del-item">Supprimer</button></div>
+  <div class="item"><span>Coque téléphone</span><span>16,00 €</span><button class="del-item">Supprimer</button></div>
+
+  <div class="summary">
+    <div class="row"><span>Sous-total</span><span id="sub">45,90 €</span></div>
+    <div class="row" id="disc-row" hidden><span>Réduction</span><span id="disc"></span></div>
+    <div id="coupon-zone">
+      <a href="#" id="open-code">Code promo AliExpress</a>
+    </div>
+    <div class="row total-row"><span>Total</span><strong id="total">45,90 €</strong></div>
+  </div>
+
+<script>
+  // Simule le comportement d'une SPA type React : contrôles créés dynamiquement, réponse asynchrone.
+  const SUB = 45.90;
+  const CODES = { AEFR10: (s) => s * 0.10, SAVE5: () => 5, BIG30: (s) => (s >= 60 ? 30 : null) };
+  const EXPIRED = new Set(['OLD2023']);
+  const fmt = (v) => v.toFixed(2).replace('.', ',') + ' €';
+  let applied = null;
+  window.applyCount = 0;
+
+  function render() {
+    const d = applied ? CODES[applied](SUB) : 0;
+    document.getElementById('disc-row').hidden = !applied;
+    document.getElementById('disc').textContent = applied ? '-' + fmt(d) : '';
+    document.getElementById('total').textContent = fmt(SUB - d);
+  }
+
+  document.getElementById('open-code').addEventListener('click', (e) => {
+    e.preventDefault();
+    const zone = document.getElementById('coupon-zone');
+    zone.innerHTML = `
+      <div class="code-box">
+        <input type="text" placeholder="Saisir un code" class="cp-input">
+        <button class="cp-apply">Appliquer</button>
+        <div class="cp-applied" hidden><span class="cp-name"></span> <button class="cp-remove">Supprimer</button></div>
+        <div class="err"></div>
+      </div>`;
+    const input = zone.querySelector('.cp-input');
+    let value = '';
+    input.addEventListener('input', () => { value = input.value; });
+    zone.querySelector('.cp-apply').addEventListener('click', () => {
+      window.applyCount++;
+      const code = value.trim().toUpperCase();
+      const err = zone.querySelector('.err');
+      err.textContent = '';
+      setTimeout(() => {
+        if (EXPIRED.has(code)) { err.textContent = 'Ce code a expiré.'; return; }
+        const fn = CODES[code];
+        if (!fn) { err.textContent = 'Code invalide, veuillez réessayer.'; return; }
+        if (fn(SUB) == null) { err.textContent = 'Montant minimum de 60 € non atteint.'; return; }
+        applied = code;
+        zone.querySelector('.cp-applied').hidden = false;
+        zone.querySelector('.cp-name').textContent = code;
+        render();
+      }, 400);
+    });
+    zone.querySelector('.cp-remove').addEventListener('click', () => {
+      setTimeout(() => { applied = null; zone.querySelector('.cp-applied').hidden = true; render(); }, 300);
+    });
+  });
+</script>
+</body>
+</html>

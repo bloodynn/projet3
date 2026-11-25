@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <strong>🎟️ AliPromo</strong>
+    <span id="summary"></span>
+  </header>
+
+  <button id="run" class="primary">Tester les codes sur cet onglet</button>
+
+  <nav>
+    <button data-tab="codes" class="active">Codes</button>
+    <button data-tab="sources">Sources</button>
+    <button data-tab="settings">Réglages</button>
+  </nav>
+
+  <section id="tab-codes">
+    <textarea id="newCodes" rows="3" placeholder="Collez un ou plusieurs codes (un par ligne, ou séparés par des virgules/espaces)"></textarea>
+    <button id="addCodes">Ajouter</button>
+    <div class="filters">
+      <label><input type="checkbox" id="hideDead"> Masquer les codes morts</label>
+    </div>
+    <ul id="codeList"></ul>
+  </section>
+
+  <section id="tab-sources" hidden>
+    <p class="hint">Adresses de pages de coupons AliExpress (une par ligne) ou de flux JSON
+      (<code>["CODE1","CODE2"]</code>). Les codes y sont extraits automatiquement toutes les 6 h.</p>
+    <textarea id="sources" rows="6" placeholder="https://exemple.com/coupons-aliexpress"></textarea>
+    <button id="saveSources">Enregistrer</button>
+    <button id="refresh">Rafraîchir maintenant</button>
+    <ul id="sourceReport"></ul>
+  </section>
+
+  <section id="tab-settings" hidden>
+    <label>Pause entre deux essais (ms) <input type="number" id="delayMs" min="300" step="100"></label>
+    <label>Échecs avant de mettre un code de côté <input type="number" id="maxFailures" min="1"></label>
+    <label>Retenter un code mis de côté après (jours) <input type="number" id="retryAfterDays" min="1"></label>
+    <label class="row"><input type="checkbox" id="autoApplyBest"> Appliquer automatiquement le meilleur code</label>
+    <details>
+      <summary>Sélecteurs CSS (si AliExpress change sa page)</summary>
+      <label>Champ code <input id="sel-input" placeholder="auto"></label>
+      <label>Bouton appliquer <input id="sel-apply" placeholder="auto"></label>
+      <label>Bouton supprimer le code <input id="sel-remove" placeholder="auto"></label>
+      <label>Total de la commande <input id="sel-total" placeholder="auto"></label>
+    </details>
+    <button id="saveSettings">Enregistrer</button>
+    <hr>
+    <button id="export">Exporter (JSON)</button>
+    <label class="file">Importer <input type="file" id="import" accept="application/json"></label>
+    <button id="resetStats" class="danger">Réinitialiser les statistiques</button>
+    <h4>Derniers essais</h4>
+    <ul id="history"></ul>
+  </section>
+
+  <div id="toast" hidden></div>
+  <script src="../lib/core.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

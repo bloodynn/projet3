@@ -1,0 +1,30 @@
+body { font: 13px/1.4 system-ui, sans-serif; width: 360px; margin: 0; padding: 10px; color: #222; background: #fff; }
+header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; font-size: 15px; }
+#summary { font-size: 12px; color: #666; }
+button { font: inherit; padding: 6px 10px; border: 1px solid #ccc; background: #f7f7f7; border-radius: 6px; cursor: pointer; }
+button:hover { background: #eee; }
+button.primary { width: 100%; background: #ff4747; color: #fff; border: 0; padding: 9px; font-weight: 600; font-size: 14px; }
+button.danger { color: #b00; }
+nav { display: flex; gap: 4px; margin: 10px 0 8px; border-bottom: 1px solid #eee; }
+nav button { border: 0; background: none; border-bottom: 2px solid transparent; border-radius: 0; }
+nav button.active { border-bottom-color: #ff4747; font-weight: 600; }
+textarea, input[type=number], input:not([type]) { width: 100%; box-sizing: border-box; font: inherit; padding: 6px; border: 1px solid #ccc; border-radius: 6px; margin: 4px 0; }
+label { display: block; margin: 6px 0; }
+label.row, .filters label { display: flex; gap: 6px; align-items: center; }
+ul { list-style: none; padding: 0; margin: 8px 0; max-height: 260px; overflow: auto; }
+#codeList li { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+#codeList .code { font-family: ui-monospace, monospace; font-weight: 600; flex: 1; word-break: break-all; }
+#codeList .meta { font-size: 11px; color: #777; }
+.badge { font-size: 11px; padding: 1px 6px; border-radius: 10px; white-space: nowrap; }
+.badge.ok { background: #e3f7e9; color: #0a7d32; }
+.badge.dead { background: #fde8e8; color: #b00; }
+.badge.new { background: #eef2ff; color: #3949ab; }
+.badge.meh { background: #fff4e0; color: #a35b00; }
+.src { font-size: 10px; color: #999; }
+li button { padding: 2px 6px; font-size: 11px; }
+.hint { color: #666; font-size: 12px; }
+.file { display: inline-block; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; background: #f7f7f7; cursor: pointer; }
+.file input { display: none; }
+#history li, #sourceReport li { font-size: 12px; padding: 3px 0; border-bottom: 1px dashed #eee; word-break: break-all; }
+#toast { position: fixed; left: 10px; right: 10px; bottom: 10px; background: #222; color: #fff; padding: 8px; border-radius: 6px; text-align: center; }
+details { margin: 8px 0; }

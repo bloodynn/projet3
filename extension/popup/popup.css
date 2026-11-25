@@ -25,6 +25,11 @@ li button { padding: 2px 6px; font-size: 11px; }
 .hint { color: #666; font-size: 12px; }
 .file { display: inline-block; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; background: #f7f7f7; cursor: pointer; }
 .file input { display: none; }
-#history li, #sourceReport li { font-size: 12px; padding: 3px 0; border-bottom: 1px dashed #eee; word-break: break-all; }
+#history li, #sourceReport li, #webReport li { font-size: 12px; padding: 3px 0; border-bottom: 1px dashed #eee; word-break: break-all; }
 #toast { position: fixed; left: 10px; right: 10px; bottom: 10px; background: #222; color: #fff; padding: 8px; border-radius: 6px; text-align: center; }
 details { margin: 8px 0; }
+button.primary2 { width: 100%; background: #ff7a00; color: #fff; border: 0; font-weight: 600; margin: 6px 0; }
+#tab-web > button:not(.primary2) { width: 100%; margin: 3px 0; }
+.btns { display: flex; gap: 6px; }
+#webStatus { min-height: 16px; margin-top: 6px; }
+.badge.web { background: #e8f4fd; color: #0b63a3; }

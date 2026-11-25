@@ -35,6 +35,14 @@ async function load() {
   $('delayMs').value = s.delayMs; $('maxFailures').value = s.maxFailures;
   $('retryAfterDays').value = s.retryAfterDays; $('autoApplyBest').checked = !!s.autoApplyBest;
   for (const k of ['input', 'apply', 'remove', 'total']) $('sel-' + k).value = (s.selectors || {})[k] || '';
+  $('dorks').value = (s.dorks || Core.DEFAULT_DORKS).join('\n');
+  $('autoWebSearch').checked = !!s.autoWebSearch;
+  $('webMaxPages').value = s.webMaxPages || 10;
+  chrome.permissions.contains({ origins: ['https://*/*'] }, (ok) => { $('webPerm').hidden = ok; });
+  if (state.lastWebSearch && !$('webStatus').textContent) {
+    $('webStatus').textContent = 'Dernière recherche : ' + new Date(state.lastWebSearch).toLocaleString('fr-FR') +
+      ` · ${Object.keys(state.webCodes).length} codes issus du web`;
+  }
   $('history').innerHTML = '';
   for (const h of state.history.slice(0, 15)) {
     const li = document.createElement('li');
@@ -63,9 +71,12 @@ function renderCodes() {
       : '';
     if (st && st.lastError) meta.title = st.lastError;
     info.append(name, meta);
-    if (state.sourceCodes[code]) {
+    const origin = (state.sourceCodes[code] || []).concat(state.webCodes[code] ? state.webCodes[code].urls : []);
+    if (origin.length) {
       const src = document.createElement('div'); src.className = 'src';
-      src.textContent = 'source : ' + new URL(state.sourceCodes[code][0]).hostname;
+      const hosts = Array.from(new Set(origin.map((u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return '?'; } })));
+      src.textContent = (state.webCodes[code] ? '🔎 web : ' : 'source : ') + hosts.slice(0, 3).join(', ') + (hosts.length > 3 ? ` +${hosts.length - 3}` : '');
+      src.title = origin.join('\n');
       info.appendChild(src);
     }
     const badge = document.createElement('span'); badge.className = 'badge ' + status.cls; badge.textContent = status.label;
@@ -82,7 +93,7 @@ function renderCodes() {
 // Onglets
 document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('active', x === b));
-  for (const t of ['codes', 'sources', 'settings']) $('tab-' + t).hidden = t !== b.dataset.tab;
+  for (const t of ['codes', 'web', 'sources', 'settings']) $('tab-' + t).hidden = t !== b.dataset.tab;
 }));
 
 $('hideDead').addEventListener('change', renderCodes);
@@ -165,6 +176,87 @@ $('run').addEventListener('click', async () => {
     if (chrome.runtime.lastError) toast('Rechargez la page AliExpress puis réessayez');
     else window.close();
   });
+});
+
+// ---------- Onglet Web (dorks) ----------
+
+const dorkTemplates = () => $('dorks').value.split('\n').map((l) => l.trim()).filter(Boolean);
+
+async function saveWebSettings() {
+  await send('setSettings', { settings: {
+    dorks: dorkTemplates(),
+    autoWebSearch: $('autoWebSearch').checked,
+    webMaxPages: Math.min(40, Math.max(1, +$('webMaxPages').value || 10))
+  } });
+}
+
+function requestWebAccess() {
+  return chrome.permissions.request({ origins: ['https://*/*', 'http://*/*'] });
+}
+
+$('grantWeb').addEventListener('click', async () => {
+  if (await requestWebAccess()) { $('webPerm').hidden = true; toast('Accès au web autorisé'); }
+});
+$('saveDorks').addEventListener('click', async () => { await saveWebSettings(); toast('Requêtes enregistrées'); });
+$('resetDorks').addEventListener('click', async () => {
+  $('dorks').value = Core.DEFAULT_DORKS.join('\n');
+  await send('setSettings', { settings: { dorks: null } });
+  toast('Requêtes par défaut rétablies');
+});
+$('autoWebSearch').addEventListener('change', saveWebSettings);
+$('webMaxPages').addEventListener('change', saveWebSettings);
+
+$('knownSites').addEventListener('click', async () => {
+  const origins = Core.KNOWN_SITES.map((u) => new URL(u).origin + '/*');
+  if (!(await chrome.permissions.request({ origins }))) { toast('Autorisation refusée'); return; }
+  const sources = await send('addKnownSites');
+  $('sources').value = (sources || []).join('\n');
+  toast(`${Core.KNOWN_SITES.length} sites ajoutés aux sources — analyse en cours…`);
+  $('refresh').click();
+});
+
+$('webGoogle').addEventListener('click', async () => {
+  await saveWebSettings();
+  const queries = Core.buildQueries(dorkTemplates());
+  // Les pages trouvées via Google seront analysées si l'accès au web est autorisé
+  await requestWebAccess();
+  for (const q of queries) {
+    chrome.tabs.create({ url: 'https://www.google.com/search?num=20&alipromo=1&q=' + encodeURIComponent(q), active: false });
+  }
+  toast(`${queries.length} recherches Google ouvertes en arrière-plan`);
+});
+
+$('webAuto').addEventListener('click', async () => {
+  if (!(await requestWebAccess())) { toast("L'accès au web est nécessaire"); return; }
+  $('webPerm').hidden = true;
+  await saveWebSettings();
+  $('webAuto').disabled = true;
+  $('webReport').innerHTML = '';
+  $('webStatus').textContent = 'Recherche en cours… (vous pouvez fermer ce popup, elle continue)';
+  chrome.runtime.sendMessage({ type: 'webSearch' }, (res) => {
+    $('webAuto').disabled = false;
+    if (chrome.runtime.lastError) return;
+    if (!res || !res.ok) { $('webStatus').textContent = '⚠️ ' + ((res && res.error) || 'erreur'); return; }
+    const r = res.data;
+    $('webStatus').textContent = `✔ ${r.totalFound} codes repérés, ${r.newCodes.length} nouveaux` +
+      (r.newCodes.length ? ` : ${r.newCodes.slice(0, 15).join(', ')}` : '') +
+      (r.blocked.length ? ` · ⚠️ bloqué par : ${Array.from(new Set(r.blocked)).join(', ')} (essayez « Ouvrir dans Google »)` : '');
+    for (const q of r.queries) {
+      const li = document.createElement('li');
+      li.textContent = q.error ? `⚠️ [${q.engine}] ${q.q} : ${q.error}` : `[${q.engine}] ${q.q} → ${q.results} résultats, ${q.codes} codes`;
+      $('webReport').appendChild(li);
+    }
+    for (const p of r.pages) {
+      const li = document.createElement('li');
+      li.textContent = p.error ? `⚠️ ${p.url} : ${p.error}` : `📄 ${p.url} → ${p.count} codes`;
+      $('webReport').appendChild(li);
+    }
+    load();
+  });
+});
+
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg && msg.type === 'webProgress') $('webStatus').textContent = msg.text;
 });
 
 load();

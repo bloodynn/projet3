@@ -23,11 +23,11 @@ test('extractCodes trouve les codes dans du HTML de site de coupons', () => {
   const html = `
     <div class="coupon" data-code="FRSALE10">Copier</div>
     <p>Utilisez le code promo : AENOV25 pour 25€ de réduction</p>
-    <p>Coupon: SUPER5 dès 30€ d'achat. Le code est valable aujourd'hui.</p>
+    <p>Coupon: SUPERX5 dès 30€ d'achat. Le code est valable aujourd'hui.</p>
     <button data-clipboard-text="ali-bf-8">copy</button>
     <p>Code 2024 et code promo valable</p>`;
   const codes = Core.extractCodes(html).sort();
-  assert.deepStrictEqual(codes, ['AENOV25', 'ALI-BF-8', 'FRSALE10', 'SUPER5']);
+  assert.deepStrictEqual(codes, ['AENOV25', 'ALI-BF-8', 'FRSALE10', 'SUPERX5']);
 });
 
 test('shouldSkip met de côté les codes qui échouent en boucle, puis les retente', () => {
@@ -63,4 +63,40 @@ test('recordResult et pickBest', () => {
   const best = Core.pickBest([{ code: 'A', ok: true, saving: 2 }, { code: 'B', ok: false }, { code: 'C', ok: true, saving: 4 }]);
   assert.strictEqual(best.code, 'C');
   assert.strictEqual(Core.pickBest([{ code: 'A', ok: false }]), null);
+});
+
+test('extractCodes accepte les codes courts type F13 mais pas les mots courts', () => {
+  const codes = Core.extractCodes('Code promo : F13 (13€ dès 99€) — code F23 — code TVA — Code: ABC').sort();
+  assert.deepStrictEqual(codes, ['F13', 'F23']);
+});
+
+test('buildQueries remplace les variables de date', () => {
+  const q = Core.buildQueries(['"code promo" aliexpress "{mois} {annee}"', 'promo code "{month} {year}"', ' '], new Date(2026, 10, 25));
+  assert.deepStrictEqual(q, ['"code promo" aliexpress "novembre 2026"', 'promo code "November 2026"']);
+  assert.ok(Core.DEFAULT_DORKS.length >= 5);
+});
+
+test('unwrapUrl décode les liens de redirection des moteurs', () => {
+  assert.strictEqual(Core.unwrapUrl('//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.ebuyclub.com%2Freduction-aliexpress-6325&amp;rut=abc'),
+    'https://www.ebuyclub.com/reduction-aliexpress-6325');
+  const b64 = Buffer.from('https://www.dealabs.com/codes-promo/aliexpress').toString('base64').replace(/=+$/, '');
+  assert.strictEqual(Core.unwrapUrl('https://www.bing.com/ck/a?!&&p=xyz&u=a1' + b64 + '&ntb=1'), 'https://www.dealabs.com/codes-promo/aliexpress');
+  assert.strictEqual(Core.unwrapUrl('https://www.google.com/url?q=https://site.fr/x&sa=U'), 'https://site.fr/x');
+});
+
+test('parseSearchResults lit DuckDuckGo et Bing, et écarte aliexpress.com', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const ddg = Core.parseSearchResults(fs.readFileSync(path.join(__dirname, 'fixtures/ddg.html'), 'utf8'), 'duckduckgo');
+  assert.deepStrictEqual(ddg.map((r) => r.url), ['https://coupons.example/aliexpress', 'https://blog.example/codes-aliexpress-novembre']);
+  assert.match(ddg[0].snippet, /code AEBF26/);
+  assert.deepStrictEqual(Core.extractCodes(ddg[0].title + ' ' + ddg[0].snippet), ['AEBF26']);
+  const bing = Core.parseSearchResults(fs.readFileSync(path.join(__dirname, 'fixtures/bing.html'), 'utf8'), 'bing');
+  assert.deepStrictEqual(bing.map((r) => r.url), ['https://coupons.example/aliexpress', 'https://forum.example/t/aliexpress-codes']);
+  assert.match(bing[1].snippet, /F23/);
+});
+
+test('extractCodes tolère du texte entre le mot-clé et le code', () => {
+  const codes = Core.extractCodes('Le meilleur code promo du mois : AEFR10. Code promo BLACK FRIDAY valable jusqu\'au NOVEMBRE. Promo AliExpress.').sort();
+  assert.deepStrictEqual(codes, ['AEFR10']);
 });

@@ -14,6 +14,7 @@
 
   <nav>
     <button data-tab="codes" class="active">Codes</button>
+    <button data-tab="web">Web 🔎</button>
     <button data-tab="sources">Sources</button>
     <button data-tab="settings">Réglages</button>
   </nav>
@@ -25,6 +26,27 @@
       <label><input type="checkbox" id="hideDead"> Masquer les codes morts</label>
     </div>
     <ul id="codeList"></ul>
+  </section>
+
+  <section id="tab-web" hidden>
+    <p class="hint">Recherche de codes sur le web avec des requêtes avancées (« Google dorks »).
+      Variables : <code>{mois}</code> <code>{annee}</code> <code>{month}</code> <code>{year}</code>.</p>
+    <div id="webPerm" hidden>
+      <button id="grantWeb" class="primary2">Autoriser l'accès au web</button>
+      <p class="hint">Nécessaire pour lire les pages de bons plans trouvées.</p>
+    </div>
+    <textarea id="dorks" rows="7" spellcheck="false"></textarea>
+    <div class="btns">
+      <button id="saveDorks">Enregistrer</button>
+      <button id="resetDorks">Requêtes par défaut</button>
+    </div>
+    <button id="webAuto" class="primary2">🔎 Recherche automatique (DuckDuckGo + Bing)</button>
+    <button id="webGoogle">Ouvrir les recherches dans Google</button>
+    <button id="knownSites">➕ Ajouter les sites de bons plans connus aux sources</button>
+    <label class="row"><input type="checkbox" id="autoWebSearch"> Relancer la recherche toutes les 6 h</label>
+    <label>Pages à analyser par recherche <input type="number" id="webMaxPages" min="1" max="40"></label>
+    <div id="webStatus" class="hint"></div>
+    <ul id="webReport"></ul>
   </section>
 
   <section id="tab-sources" hidden>
